@@ -17,7 +17,7 @@ jobs:
             apt-get update
             apt-get install -y kubectl
             apt-get install -y docker.io
-            systemctl start docker
+            service docker start
       - run:
           name: "Build Docker image"
           command: |
