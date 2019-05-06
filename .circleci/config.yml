@@ -16,7 +16,7 @@ jobs:
             echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
             apt-get update
             apt-get install -y kubectl
-            apt-get install docker.io
+            apt-get install -y docker.io
             systemctl start docker
       - run:
           name: "Build Docker image"
