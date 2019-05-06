@@ -10,14 +10,13 @@ jobs:
       - run:
           name: "Install basic dependencies"
           command: |
-            sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-            sudo apt-get remove docker docker-engine docker.io
-            curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-            echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
-            sudo apt-get update
-            sudo apt-get install -y kubectl
-            sudo apt-get install docker.io
-            sudo systemctl start docker
+            apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+            apt-get remove docker docker-engine docker.io
+            curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+            echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
+            apt-get install -y kubectl
+            apt-get install docker.io
+            systemctl start docker
       - run:
           name: "Build Docker image"
           command: |
