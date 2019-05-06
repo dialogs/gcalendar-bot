@@ -14,6 +14,7 @@ jobs:
             apt-get remove docker docker-engine docker.io
             curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
             echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
+            apt-get update
             apt-get install -y kubectl
             apt-get install docker.io
             systemctl start docker
