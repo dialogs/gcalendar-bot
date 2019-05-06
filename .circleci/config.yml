@@ -1,0 +1,46 @@
+version: 2
+jobs:
+  build:
+    working_directory: /app
+    docker:
+      - image: ubuntu:18.04
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: "Install basic dependencies"
+          command: |
+            sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+            sudo apt-get remove docker docker-engine docker.io
+            curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+            echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+            sudo apt-get update
+            sudo apt-get install -y kubectl
+            sudo apt-get install docker.io
+            sudo systemctl start docker
+      - run:
+          name: "Build Docker image"
+          command: |
+            echo "FROM python:3.7-alpine
+
+            ENV LIBRARY_PATH=/lib:/usr/lib
+            ENV BOT_ENDPOINT=$BOT_ENDPOINT
+            ENV BOT_TOKEN=$BOT_TOKEN
+
+            RUN apk add build-base python3-dev py3-pip jpeg-dev zlib-dev libffi-dev libressl-dev
+            RUN apk add --no-cache py-cryptography
+            RUN python3 -m pip install -r requirements.txt
+
+            WORKDIR "/tmp"
+
+            COPY . /tmp
+
+            CMD ["python3", "src/main.py"]" > Dockerfile
+            echo $CREDENTIALS_FILE > credentials.json
+            echo $SETTINGS_FILE > settings.json
+            docker build -t $IMAGE_NAME:latest .
+      - run:
+          name: "Push Docker image to Docker Hub"
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push $IMAGE_NAME:latest
