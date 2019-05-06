@@ -19,4 +19,4 @@ jobs:
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker tag $IMAGE_NAME $COMPANY_NAME/$IMAGE_NAME
-            docker push $IMAGE_NAME
+            docker push $COMPANY_NAME/$IMAGE_NAME
