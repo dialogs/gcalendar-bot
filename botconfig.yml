@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $IMAGE_NAME
+spec:
+  selector:
+    matchLabels:
+      app: $IMAGE_NAME
+  template:
+    metadata:
+      labels:
+        app: $IMAGE_NAME
+    spec:
+      containers:
+      - name: nginx
+        image: https://hub.docker.com/r/dialogs/gcalendarbot
+        env:
+        - name: BOT_TOKEN
+          value: $BOT_TOKEN
+        - name: BOT_ENDPOINT
+          value: $BOT_ENDPOINT

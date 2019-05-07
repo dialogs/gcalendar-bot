@@ -1,22 +1,47 @@
 version: 2
 jobs:
-  build:
-    docker:
-      - image: circleci/buildpack-deps:stretch
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Print credentials
-          command: |
-              echo $CREDENTIALS_FILE > credentials.json
-              echo $SETTINGS_FILE > settings.json
-      - run:
-          name: Build Docker image
-          command: docker build -t $IMAGE_NAME .
-      - run:
-          name: Publish Docker Image to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker tag $IMAGE_NAME $COMPANY_NAME/$IMAGE_NAME
-            docker push $COMPANY_NAME/$IMAGE_NAME
+    build_docker_image:
+        docker:
+            - image: circleci/buildpack-deps:stretch
+        steps:
+            - checkout
+            - setup_remote_docker
+            - run:
+                name: Print credentials
+                command: |
+                    echo $CREDENTIALS_FILE > credentials.json
+                    echo $SETTINGS_FILE > settings.json
+            - run:
+                name: Build Docker image
+                command: docker build -t $IMAGE_NAME .
+            - run:
+                name: Publish Docker Image to Docker Hub
+                command: |
+                    echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+                    docker tag $IMAGE_NAME $COMPANY_NAME/$IMAGE_NAME
+                    docker push $COMPANY_NAME/$IMAGE_NAME
+    deploy_to_do:
+        docker:
+            - image: lachlanevenson/k8s-kubectl:1.13.5
+        steps:
+            - setup_remote_docker
+            - run:
+                name: Print kube config
+                command: |
+                    mkdir -p ~/.kube
+                    echo $KUBECONFIG_FILE > ~/.kube/config
+            - run:
+                name: Deploy to DigitalOcean
+                command: |
+                    kubectl apply -f botconfig.yml
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build_docker_image
+      - deploy_to_do:
+          requires:
+            - build_docker_image
+          filters:
+            branches:
+              only: master
