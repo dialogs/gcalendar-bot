@@ -37,8 +37,7 @@ jobs:
                     echo $KUBECONFIG_FILE > ~/.kube/config
             - run:
                 name: Deploy to DigitalOcean
-                command: |
-                    ./kubectl apply -f botconfig.yml
+                command: ./kubectl apply -f botconfig.yml
 workflows:
   version: 2
   build_test_deploy:
