@@ -26,7 +26,7 @@ jobs:
         steps:
             - setup_remote_docker
             - run:
-                name: Install kubectl
+                name: Install kubectl & deploy
                 command: |
                     curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.13.5/bin/linux/amd64/kubectl
                     chmod u+x ./kubectl
@@ -38,7 +38,7 @@ jobs:
             - run:
                 name: Deploy to DigitalOcean
                 command: |
-                    kubectl apply -f botconfig.yml
+                    ./kubectl apply -f botconfig.yml
 workflows:
   version: 2
   build_test_deploy:
