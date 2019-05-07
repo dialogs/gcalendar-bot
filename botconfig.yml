@@ -18,4 +18,4 @@ spec:
             - name: BOT_TOKEN
               value: $BOT_TOKEN
             - name: BOT_ENDPOINT
-          value: $BOT_ENDPOINT
+              value: $BOT_ENDPOINT
