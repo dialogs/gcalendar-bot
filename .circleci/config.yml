@@ -26,6 +26,10 @@ jobs:
         steps:
             - setup_remote_docker
             - run:
+                name: Install envsubst
+                command: |
+                    sudo apt-get update && sudo apt-get -y install gettext-base
+            - run:
                 name: Install kubectl & deploy
                 command: |
                     curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.13.5/bin/linux/amd64/kubectl
@@ -36,29 +40,9 @@ jobs:
                     mkdir -p ~/.kube
                     echo $KUBECONFIG_FILE > ~/.kube/config
             - run:
-                name: Print kube deploy config
+                name: Make kube deploy config
                 command: |
-                    echo "apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: $IMAGE_NAME
-spec:
-  selector:
-    matchLabels:
-      app: $IMAGE_NAME
-  template:
-    metadata:
-      labels:
-        app: $IMAGE_NAME
-    spec:
-      containers:
-        - name: nginx
-          image: https://hub.docker.com/r/dialogs/gcalendarbot
-          env:
-            - name: BOT_TOKEN
-              value: $BOT_TOKEN
-            - name: BOT_ENDPOINT
-          value: $BOT_ENDPOINT" > botconfig.yml
+                    envsubst < botconfig.yml
             - run:
                 name: Deploy to DigitalOcean
                 command: ./kubectl apply -f botconfig.yml
