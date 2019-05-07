@@ -22,9 +22,14 @@ jobs:
                     docker push $COMPANY_NAME/$IMAGE_NAME
     deploy_to_do:
         docker:
-            - image: lachlanevenson/k8s-kubectl:1.13.5
+            - image: circleci/buildpack-deps:stretch
         steps:
             - setup_remote_docker
+            - run:
+                name: Install kubectl
+                command: |
+                    curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.13.5/bin/linux/amd64/kubectl
+                    chmod u+x ./kubectl
             - run:
                 name: Print kube config
                 command: |
