@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: https://hub.docker.com/r/dialogs/gcalendarbot
+          image: dialogs/gcalendarbot
           command: ["python3", "src/main.py"]
           env:
             - name: BOT_TOKEN
