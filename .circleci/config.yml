@@ -39,7 +39,7 @@ jobs:
                 name: Print kube config
                 command: |
                     mkdir -p ~/.kube
-                    echo $KUBECONFIG_FILE > ~/.kube/config
+                    envsubst < kubeconfig.yml > ~/.kube/config
             - run:
                 name: Make kube deploy config
                 command: |
