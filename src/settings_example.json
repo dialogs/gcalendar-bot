@@ -1,0 +1,13 @@
+{
+  "timezone": "+0300",
+  "command0": "holidays calendar",
+  "command1": "holidays per",
+  "command2": "holidays in",
+  "credentials_file": "credentials.json",
+  "token_file": "token.pickle",
+  "show_calendars": true,
+  "calendar_id": "ru.russian#holiday@group.v.calendar.google.com",
+  "num_events_limit": 256,
+  "default_lang": "ru",
+  "user_id": []
+}
