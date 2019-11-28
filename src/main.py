@@ -5,9 +5,12 @@ import json
 import logging
 import datetime
 import calendar
+import i18n
 
 # Dialogs Python Bot SDK
 import grpc
+from dialog_api import peers_pb2
+from dialog_bot_sdk import interactive_media
 from dialog_bot_sdk.bot import DialogBot
 
 from GCaluAPI import GCaluAPI
@@ -75,6 +78,7 @@ def on_msg(*params):
         log.debug("onMsg -> {}".format(param))
         try:
             if param.peer.id == param.sender_uid:
+                lang = get_lang(param.peer.id)
                 if SETTINGS["user_id"] and param.sender_uid not in SETTINGS["user_id"]:
                     # User Not authorized
                     continue
@@ -82,54 +86,99 @@ def on_msg(*params):
                 now = datetime.datetime.now(TZONE)
 
                 if txt.startswith(SETTINGS["command0"]):
-                    r = get_event_list(SETTINGS["calendar_id"], start=now, event_limit=SETTINGS["num_events_limit"])
-                    r = "List of Upcoming Events:\n" + r
-                    bot.messaging.send_message(param.peer, r)  # r
+                    events = get_event_list(SETTINGS["calendar_id"], start=now,
+                                            event_limit=SETTINGS["num_events_limit"])
+                    text = "{0}\n{1}".format(i18n.t(PHRASES + '.all_list', locale=lang), events)
+                    bot.messaging.send_message(param.peer, text)
 
-                elif txt.startswith(SETTINGS["command1"]):
-                    blocks = txt.split(" ")
-                    if len(blocks) >= 3:
-                        month = blocks[2].lower()
-                        if month in MONTHS:
-                            start_month, end_month = get_full_month_range(now.year, MONTHS[month], TZONE)
-                            r = get_event_list(SETTINGS["calendar_id"], start=start_month, end=end_month,
-                                               event_limit=SETTINGS["num_events_limit"])
-                            r = "List of Upcoming Events of {0}:\n".format(str(month)) + r
-                            if len(r) > 0:
-                                bot.messaging.send_message(param.peer, r)
-                            else:
-                                bot.messaging.send_message(param.peer, "No Events")
-                        else:
-                            bot.messaging.send_message(param.peer, "invalid month, try again.")
-
-                elif txt.startswith(SETTINGS["command2"]):
-                    blocks = txt.split(" ")
-                    if len(blocks) >= 3:
-                        try:
-                            qrt = int(blocks[2])
-                            if qrt < 1 or qrt > 4:  # ValueError
-                                raise ValueError()
-                        except ValueError:
-                            bot.messaging.send_message(param.peer, "invalid quarter, try again.")
-                            continue
-
-                        start, end = get_quarter_range(now.year, qrt, TZONE)
-                        r = get_event_list(SETTINGS["calendar_id"], start=start, end=end,
-                                           event_limit=SETTINGS["num_events_limit"])
-                        r = "List of Upcoming Events of Q{0}:\n".format(qrt) + r
-                        if len(r) > 0:
-                            bot.messaging.send_message(param.peer, r)
-                        else:
-                            bot.messaging.send_message(param.peer, "No Events")
+                elif txt == SETTINGS["command1"]:
+                    bot.messaging.send_message(param.peer, i18n.t(PHRASES + '.set_month', locale=lang),
+                                               months_select(lang))
+                elif txt == SETTINGS["command2"]:
+                    bot.messaging.send_message(param.peer, i18n.t(PHRASES + '.set_number', locale=lang),
+                                               quarters_select(lang))
                 else:
-                    bot.messaging.send_message(param.peer, HELP_TEXT)
+                    bot.messaging.send_message(param.peer,
+                                               i18n.t(PHRASES + '.help', locale=lang)
+                                               .format(SETTINGS["command0"],
+                                                       SETTINGS["command1"],
+                                                       SETTINGS["command2"]))
         except:
             log.error("Exception", exc_info=True)
             continue
 
 
+def on_event(*params):
+    uid = params[0].uid
+    msg = bot.messaging.get_messages_by_id([params[0].mid])[0]
+    peer = peers_pb2.Peer(type=peers_pb2.PEERTYPE_PRIVATE, id=uid)
+    which_button = params[0].value
+    if which_button in MONTHS or which_button in ["1", "2", "3", "4"]:
+        send_events(peer, which_button)
+    bot.messaging.update_message(msg, msg.message.textMessage.text)
+
+
+def send_events(peer, target):
+    lang = get_lang(peer.id)
+    now = datetime.datetime.now(TZONE)
+    if target.isdigit():
+        start, end = get_quarter_range(now.year, int(target), TZONE)
+        phrase = '.quarter_list'
+    else:
+        start, end = get_full_month_range(now.year, MONTHS[target], TZONE)
+        phrase = '.month_list'
+        target = i18n.t("{0}.{1}".format(MONTHS_I18N, target), locale=lang)
+    events = get_event_list(SETTINGS["calendar_id"], start=start, end=end,
+                            event_limit=SETTINGS["num_events_limit"])
+    text = "{0}\n{1}".format(i18n.t(PHRASES + phrase, locale=lang).format(target), events)
+    if len(events) > 0:
+        bot.messaging.send_message(peer, text)
+    else:
+        bot.messaging.send_message(peer, i18n.t(PHRASES + '.no_events', locale=lang))
+
+
+def get_lang(uid):
+    user = bot.users.get_user_by_id(uid)
+    locales = user.data.locales
+    if not locales or locales[0] not in LANG_LIST:
+        return DEFAULT_LANG
+    else:
+        return locales[0]
+
+
+def months_select(lang):
+    actions = {}
+    for month, value in MONTHS.items():
+        actions[month] = i18n.t("{0}.{1}".format(MONTHS_I18N, month), locale=lang)
+
+    return [interactive_media.InteractiveMediaGroup([
+            interactive_media.InteractiveMedia(
+                "months",
+                interactive_media.InteractiveMediaSelect(actions, i18n.t(PHRASES + '.month', locale=lang))
+            )
+        ]
+    )]
+
+
+def quarters_select(lang):
+    actions = {}
+    for i in range(1, 5):
+        actions[str(i)] = "Q{}".format(str(i))
+    return [interactive_media.InteractiveMediaGroup([
+            interactive_media.InteractiveMedia(
+                "quarters",
+                interactive_media.InteractiveMediaSelect(actions, i18n.t(PHRASES + '.quarter', locale=lang),
+                                                         i18n.t(PHRASES + '.quarter', locale=lang))
+            )
+        ]
+    )]
+
+
 if __name__ == '__main__':
-    SETTINGS_PATH = "settings.json"
+    i18n.load_path.append(os.path.dirname(__file__) + '/../translations')
+    PHRASES = 'phrases.phrases'
+    MONTHS_I18N = 'phrases.month'
+    SETTINGS_PATH = os.path.dirname(__file__) + "/settings.json"
 
     MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
               "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
@@ -146,15 +195,18 @@ if __name__ == '__main__':
             log.error("Can't load settings", exc_info=True)
             sys.exit(1)
 
-        HELP_TEXT = "This bot can help you, manage your calendar events.\n" \
-                    ">send \"{0}\" to show all upcoming events.\n" \
-                    ">send \"{1} <MONTH>\" to show all events of the month.\n" \
-                    ">send \"{2} <QUARTER>\" to show all events of the QUARTER.\n".format(SETTINGS["command0"],
-                                                                                          SETTINGS["command1"],
-                                                                                          SETTINGS["command2"])
+        LANG_LIST = ["en", "ru"]
+        try:
+            DEFAULT_LANG = SETTINGS["default_lang"]
+            if DEFAULT_LANG not in LANG_LIST:
+                raise Exception()
+        except:
+            DEFAULT_LANG = "en"
+
         # Initialize API
         try:
-            API = GCaluAPI(SETTINGS["credentials_file"], SETTINGS["token_file"])
+            API = GCaluAPI("{0}/{1}".format(os.path.dirname(__file__), SETTINGS["credentials_file"]),
+                           "{0}/{1}".format(os.path.dirname(__file__), SETTINGS["token_file"]))
         except:
             log.error("Can't initialize GoogleuAPI", exc_info=True)
             sys.exit(1)
@@ -170,7 +222,7 @@ if __name__ == '__main__':
                 grpc.ssl_channel_credentials(),  # SSL credentials (empty by default!)
                 os.environ.get('BOT_TOKEN')  # bot token
             )
-            bot.messaging.on_message(on_msg, raw_callback=raw_call)
+            bot.messaging.on_message(on_msg, on_event, raw_callback=raw_call)
         except:
             log.error("Can't initialize bot", exc_info=True)
             sys.exit(1)

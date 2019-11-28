@@ -1,0 +1,29 @@
+en:
+  phrases:
+    month: Month
+    quarter: Quarter
+    all_list: "List of Upcoming Events:"
+    month_list: "List of Upcoming Events of month {}:"
+    quarter_list: "List of Upcoming Events of Q{}:"
+    no_events: No Events
+    set_number: Select the quarter
+    set_month: Select the month
+    help: |
+      This bot can help you, manage your calendar events.
+
+      >send "{0}" to show all upcoming events.
+      >send "{1}" to select the month in which you want to know upcoming events.
+      >send "{2}" to select the quarter in which you want to know upcoming events.
+  month:
+    jan: January
+    feb: February
+    mar: March
+    apr: April
+    may: May
+    jun: June
+    jul: July
+    aug: August
+    sep: September
+    oct: October
+    nov: November
+    dec: December
